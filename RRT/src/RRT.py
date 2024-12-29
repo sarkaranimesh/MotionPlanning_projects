@@ -7,7 +7,7 @@ import time
 def main():
     dimensions = (600,1000)
     start = (10,50)
-    goal = (10,60)
+    goal = (600,50)
     obsdim = 30
     obsnum = 50
     iteration = 0
@@ -48,12 +48,6 @@ def main():
     pygame.display.update()
     pygame.event.clear()
     pygame.event.wait(0)
-
-
-
-
-            
-
 
 
 
