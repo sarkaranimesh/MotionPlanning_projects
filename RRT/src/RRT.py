@@ -1,15 +1,15 @@
 import pygame
-# from RRTbasePy import RRTGraph
-# from RRTbasePy import RRTMap
-from RRT_star import RRTGraph
-from RRT_star import RRTMap
+from RRTbasePy import RRTGraph
+from RRTbasePy import RRTMap
+# from RRT_star import RRTGraph
+# from RRT_star import RRTMap
 import time
 
 
 def main():
     dimensions = (600,1000)
     start = (10,50)
-    goal = (600,50)
+    goal = (600,500)
     obsdim = 30
     obsnum = 50
     iteration = 0
