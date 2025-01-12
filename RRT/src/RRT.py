@@ -1,6 +1,8 @@
 import pygame
-from RRTbasePy import RRTGraph
-from RRTbasePy import RRTMap
+# from RRTbasePy import RRTGraph
+# from RRTbasePy import RRTMap
+from RRT_star import RRTGraph
+from RRT_star import RRTMap
 import time
 
 
