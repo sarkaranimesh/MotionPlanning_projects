@@ -4,17 +4,26 @@ from RRTbasePy import RRTMap
 # from RRT_star import RRTGraph
 # from RRT_star import RRTMap
 import time
+import math
 
+def calculate_path_length(path_coords):
+    length = 0
+    for i in range(len(path_coords)-1):
+        x1, y1 = path_coords[i]
+        x2, y2 = path_coords[i+1]
+        length += math.sqrt((x2-x1)**2 + (y2-y1)**2)
+    return length
 
 def main():
     dimensions = (600,1000)
     start = (10,50)
-    goal = (600,500)
+    goal = (850,500)
     obsdim = 30
     obsnum = 50
     iteration = 0
-    t1 =time.time()
+    start_time = time.time()
     pygame.init()
+    
 
     map = RRTMap(start,goal,dimensions,obsdim,obsnum)
     graph = RRTGraph(start,goal,dimensions,obsdim,obsnum)
@@ -25,7 +34,7 @@ def main():
     map.drawMap(obstacles)
 
     while (not graph.path_to_goal()):
-        elapsed = time.time() - t1
+        elapsed = time.time() - start_time
         if elapsed > 500:  # Timeout after 10 seconds
             print("Timeout: Unable to find path within 10 seconds.")
             return  # Exit the main() function
@@ -47,6 +56,22 @@ def main():
             pygame.display.update()
         iteration+=1
     map.drawPath(graph.getPathCord())
+ # When goal is reached
+    if graph.goalFlag:
+        path_coords = graph.getPathCord()
+        map.drawPath(path_coords)
+        end_time = time.time()
+        
+        # Calculate metrics
+        execution_time = end_time - start_time
+        path_length = calculate_path_length(path_coords)
+        
+        # Display metrics
+        print(f"\nMetrics:")
+        print(f"Execution Time: {execution_time:.2f} seconds")
+        print(f"Path Length: {path_length:.2f} units")
+        print(f"Total Iterations: {iteration}")
+
     pygame.display.update()
     pygame.event.clear()
     pygame.event.wait(0)
