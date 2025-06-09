@@ -37,3 +37,5 @@ python simulation.py
 - Safe distance maintenance
 - Speed profile tracking
 - Real-time visualization 
+
+# Features of MPC

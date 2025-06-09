@@ -2,67 +2,25 @@ import numpy as np
 from scipy.optimize import minimize
 
 class MPCController:
-    def __init__(self, prediction_horizon, control_horizon, desired_velocity,
-                 desired_distance, min_safe_distance, q_velocity, q_distance,
-                 r_acceleration, r_jerk, max_jerk, opt_method='SLSQP'):
-        """
-        Initialize MPC controller
-        
-        Parameters:
-        -----------
-        prediction_horizon : int
-            Number of prediction steps
-        control_horizon : int
-            Number of control steps
-        desired_velocity : float
-            Desired velocity (m/s)
-        desired_distance : float
-            Desired following distance (m)
-        min_safe_distance : float
-            Minimum safe distance (m)
-        q_velocity : float
-            Weight for velocity tracking
-        q_distance : float
-            Weight for distance tracking
-        r_acceleration : float
-            Weight for acceleration
-        r_jerk : float
-            Weight for jerk
-        max_jerk : float
-            Maximum allowed jerk
-        opt_method : str
-            Optimization method to use
-        """
-        self.prediction_horizon = prediction_horizon
-        self.control_horizon = control_horizon
-        self.desired_velocity = desired_velocity
-        self.desired_distance = desired_distance
+    def __init__(self, horizon=10, dt=0.1, min_safe_distance=10.0):
+        self.horizon = horizon
+        self.dt = dt
         self.min_safe_distance = min_safe_distance
-        self.max_jerk = max_jerk
-        self.opt_method = opt_method
         
-        # Initialize weights with default values
+        # Initialize weights with more balanced values
         self.weights = {
-            'q_velocity': q_velocity,      # Velocity tracking weight
-            'q_distance': q_distance,      # Distance tracking weight
-            'r_acceleration': r_acceleration,  # Acceleration weight
-            'r_jerk': r_jerk,             # Jerk weight
-            'q_close': 10.0,              # Weight for being too close
-            'q_far': 1.0,                 # Weight for being too far
-            'q_safety': 1000.0,           # Weight for safety constraint violation
-            'q_jerk_violation': 1000.0    # Weight for jerk constraint violation
+            'q_velocity': 0.5,      # Reduced from 1.0
+            'q_distance': 1.0,      # Reduced from 2.0
+            'r_acceleration': 0.5,  # Increased from 0.1
+            'r_jerk': 0.5,         # Increased from 0.1
+            'q_close': 5.0,        # Reduced from 10.0
+            'q_far': 0.5,          # Reduced from 1.0
+            'q_safety': 100.0,     # Reduced from 1000.0
+            'q_jerk_violation': 100.0  # Reduced from 1000.0
         }
         
-        # Gap settings (time gaps in seconds)
-        self.gap_settings = {
-            1: 0.8,  # Shortest gap
-            2: 1.5,  # Medium gap
-            3: 2.5   # Longest gap
-        }
-        self.current_gap = 2  # Default to medium gap
-        
-        # Initialize control sequence
-        self.control_sequence = np.zeros(control_horizon)
+        # Store last control input for warm start
+        self.last_control = None
         
     def calibrate_weights(self, weights_dict):
         """
@@ -98,19 +56,6 @@ class MPCController:
         """
         return self.weights.copy()
         
-    def set_gap(self, gap_number):
-        """
-        Set the desired time gap
-        
-        Parameters:
-        -----------
-        gap_number : int
-            Gap setting (1, 2, or 3)
-        """
-        if gap_number not in self.gap_settings:
-            raise ValueError("Gap number must be 1, 2, or 3")
-        self.current_gap = gap_number
-        
     def _get_desired_distance(self, ego_velocity):
         """
         Calculate desired distance based on current velocity and gap setting
@@ -128,19 +73,19 @@ class MPCController:
         time_gap = self.gap_settings[self.current_gap]
         return max(self.min_safe_distance, ego_velocity * time_gap)
         
-    def _cost_function(self, control_sequence, ego_state, lead_state, dt):
+    def _cost_function(self, u, ego_state, lead_state, t):
         """
         Calculate cost for MPC optimization
         
         Parameters:
         -----------
-        control_sequence : numpy.ndarray
+        u : numpy.ndarray
             Sequence of control inputs
         ego_state : numpy.ndarray
             Current ego vehicle state [position, velocity]
         lead_state : numpy.ndarray
             Current lead vehicle state [position, velocity]
-        dt : float
+        t : float
             Time step (s)
             
         Returns:
@@ -154,10 +99,10 @@ class MPCController:
         # Calculate desired distance based on current velocity and gap setting
         desired_distance = self._get_desired_distance(current_state[1])
         
-        for i in range(self.prediction_horizon):
+        for i in range(self.horizon):
             # Update state
-            current_state[0] += current_state[1] * dt
-            current_state[1] += control_sequence[min(i, self.control_horizon-1)] * dt
+            current_state[0] += current_state[1] * t
+            current_state[1] += u[min(i, self.horizon-1)] * t
             
             # Calculate distance to lead vehicle
             distance = lead_state[0] - current_state[0]
@@ -181,12 +126,12 @@ class MPCController:
                 total_cost += self.weights['q_safety'] * (self.min_safe_distance - distance)**2
             
             # Acceleration cost
-            if i < self.control_horizon:
-                total_cost += self.weights['r_acceleration'] * control_sequence[i]**2
+            if i < self.horizon:
+                total_cost += self.weights['r_acceleration'] * u[i]**2
                 
                 # Jerk cost
                 if i > 0:
-                    jerk = (control_sequence[i] - control_sequence[i-1]) / dt
+                    jerk = (u[i] - u[i-1]) / t
                     total_cost += self.weights['r_jerk'] * jerk**2
                     
                     # Penalty for exceeding max jerk
@@ -195,49 +140,43 @@ class MPCController:
         
         return total_cost
         
-    def calculate_control_input(self, ego_vehicle, lead_vehicle, dt):
-        """
-        Calculate optimal control input using MPC
-        
-        Parameters:
-        -----------
-        ego_vehicle : EgoVehicle
-            Ego vehicle instance
-        lead_vehicle : LeadVehicle
-            Lead vehicle instance
-        dt : float
-            Time step (s)
-            
-        Returns:
-        --------
-        float
-            Optimal control input (acceleration)
-        """
-        # Current states
-        ego_state = np.array([ego_vehicle.position, ego_vehicle.velocity])
-        lead_state = np.array([lead_vehicle.position, lead_vehicle.velocity])
+    def optimize(self, ego_state, lead_state, t):
+        # Initial guess for control sequence (warm start)
+        if self.last_control is not None:
+            u0 = self.last_control
+        else:
+            u0 = np.zeros(self.horizon)
         
         # Bounds for control inputs
-        bounds = [(-3.0, 2.0) for _ in range(self.control_horizon)]
+        bounds = [(-3.0, 3.0) for _ in range(self.horizon)]  # Reduced from (-5.0, 5.0)
         
-        # Initial guess for control sequence
-        initial_guess = np.zeros(self.control_horizon)
+        # Constraints
+        constraints = []
         
-        # Optimize control sequence
+        # Optimize
         result = minimize(
             self._cost_function,
-            initial_guess,
-            args=(ego_state, lead_state, dt),
-            method=self.opt_method,
+            u0,
+            args=(ego_state, lead_state, t),
+            method='SLSQP',
             bounds=bounds,
-            options={'maxiter': 100}
+            constraints=constraints,
+            options={
+                'maxiter': 100,  # Increased from default
+                'ftol': 1e-4,    # Added tolerance
+                'disp': False
+            }
         )
         
-        if not result.success:
-            print(f"Warning: Optimization did not converge. Message: {result.message}")
+        # Store solution for warm start
+        if result.success:
+            self.last_control = result.x
+        else:
+            # If optimization fails, use last successful control or zero
+            if self.last_control is not None:
+                self.last_control = np.roll(self.last_control, -1)
+                self.last_control[-1] = 0.0
+            else:
+                self.last_control = np.zeros(self.horizon)
         
-        # Update control sequence
-        self.control_sequence = result.x
-        
-        # Return first control input
-        return self.control_sequence[0] 
+        return result.x[0] if result.success else 0.0 
