@@ -4,7 +4,74 @@ from vehicle_dynamics import EgoVehicle, LeadVehicle
 from mpc_controller import MPCController
 from performance_analysis import plot_performance
 
-def run_simulation(ego_vehicle, lead_vehicle, mpc_controller, dt, simulation_time):
+# Driver settings with predefined calibrations
+DRIVER_SETTINGS = {
+    'aggressive': {
+        'gap': 1,  # Shortest gap (0.8s)
+        'desired_speed_factor': 1.2,  # 20% faster than default
+        'weights': {
+            'q_velocity': 2.0,      # Higher weight for velocity tracking
+            'q_distance': 1.0,      # Lower weight for distance
+            'q_close': 5.0,         # Moderate penalty for being close
+            'q_far': 0.5,           # Lower penalty for being far
+            'r_acceleration': 0.05,  # Allow more aggressive acceleration
+            'r_jerk': 0.05          # Allow more aggressive jerk
+        }
+    },
+    'balanced': {
+        'gap': 2,  # Medium gap (1.5s)
+        'desired_speed_factor': 1.0,  # Default speed
+        'weights': {
+            'q_velocity': 1.0,      # Balanced velocity tracking
+            'q_distance': 2.0,      # Higher weight for distance
+            'q_close': 10.0,        # Higher penalty for being close
+            'q_far': 1.0,           # Balanced penalty for being far
+            'r_acceleration': 0.1,   # Moderate acceleration
+            'r_jerk': 0.1           # Moderate jerk
+        }
+    },
+    'conservative': {
+        'gap': 3,  # Longest gap (2.5s)
+        'desired_speed_factor': 0.9,  # 10% slower than default
+        'weights': {
+            'q_velocity': 0.5,      # Lower weight for velocity tracking
+            'q_distance': 3.0,      # Highest weight for distance
+            'q_close': 20.0,        # Highest penalty for being close
+            'q_far': 2.0,           # Higher penalty for being far
+            'r_acceleration': 0.2,   # More conservative acceleration
+            'r_jerk': 0.2           # More conservative jerk
+        }
+    }
+}
+
+def apply_driver_settings(mpc_controller, driver_style, base_speed):
+    """
+    Apply driver settings to the MPC controller
+    
+    Parameters:
+    -----------
+    mpc_controller : MPCController
+        MPC controller instance
+    driver_style : str
+        Driver style ('aggressive', 'balanced', or 'conservative')
+    base_speed : float
+        Base desired speed (m/s)
+    """
+    if driver_style not in DRIVER_SETTINGS:
+        raise ValueError(f"Unknown driver style: {driver_style}")
+        
+    settings = DRIVER_SETTINGS[driver_style]
+    
+    # Set gap
+    mpc_controller.set_gap(settings['gap'])
+    
+    # Set desired speed
+    mpc_controller.desired_velocity = base_speed * settings['desired_speed_factor']
+    
+    # Apply weights
+    mpc_controller.calibrate_weights(settings['weights'])
+
+def run_simulation(ego_vehicle, lead_vehicle, mpc_controller, dt, simulation_time, driver_style='balanced'):
     """
     Run the ACC simulation
     
@@ -20,13 +87,15 @@ def run_simulation(ego_vehicle, lead_vehicle, mpc_controller, dt, simulation_tim
         Time step (s)
     simulation_time : float
         Total simulation time (s)
+    driver_style : str
+        Driver style ('aggressive', 'balanced', or 'conservative')
         
     Returns:
     --------
     tuple
         Time history and simulation results
     """
-    print("Starting simulation...")
+    print(f"Starting simulation with {driver_style} driver style...")
     
     # Storage for plotting
     time_history = []
@@ -37,18 +106,16 @@ def run_simulation(ego_vehicle, lead_vehicle, mpc_controller, dt, simulation_tim
     lead_vel_history = []
     distance_history = []
     gap_history = []  # Store current gap setting
+    weight_history = []  # Store current weights
+    speed_history = []  # Store desired speed
+    
+    # Apply initial driver settings
+    base_speed = mpc_controller.desired_velocity
+    apply_driver_settings(mpc_controller, driver_style, base_speed)
     
     # Simulation loop
     current_time = 0.0
     while current_time < simulation_time:
-        # Change gap setting every 20 seconds
-        if current_time < 20.0:
-            mpc_controller.set_gap(1)  # Shortest gap
-        elif current_time < 40.0:
-            mpc_controller.set_gap(2)  # Medium gap
-        else:
-            mpc_controller.set_gap(3)  # Longest gap
-            
         # Store current states
         time_history.append(current_time)
         ego_pos_history.append(ego_vehicle.position)
@@ -58,6 +125,8 @@ def run_simulation(ego_vehicle, lead_vehicle, mpc_controller, dt, simulation_tim
         lead_vel_history.append(lead_vehicle.velocity)
         distance_history.append(lead_vehicle.position - ego_vehicle.position)
         gap_history.append(mpc_controller.gap_settings[mpc_controller.current_gap])
+        weight_history.append(mpc_controller.get_current_weights())
+        speed_history.append(mpc_controller.desired_velocity)
         
         # Get control input from MPC
         ego_vehicle.acceleration = mpc_controller.calculate_control_input(
@@ -72,10 +141,15 @@ def run_simulation(ego_vehicle, lead_vehicle, mpc_controller, dt, simulation_tim
         # Print progress every 5 seconds
         if int(current_time) % 5 == 0 and current_time > 0:
             print(f"Simulation time: {current_time:.1f}s")
+            print(f"Current settings:")
+            print(f"  - Gap: {mpc_controller.gap_settings[mpc_controller.current_gap]:.1f}s")
+            print(f"  - Desired speed: {mpc_controller.desired_velocity*3.6:.1f} km/h")
+            print(f"  - Weights: {mpc_controller.get_current_weights()}")
     
     print("Simulation completed. Preparing plots...")
     return (time_history, ego_pos_history, ego_vel_history, ego_accel_history,
-            lead_pos_history, lead_vel_history, distance_history, gap_history)
+            lead_pos_history, lead_vel_history, distance_history, gap_history,
+            weight_history, speed_history)
 
 def main():
     """Main function to run the simulation"""
@@ -83,19 +157,19 @@ def main():
     
     # Simulation parameters
     dt = 0.1
-    simulation_time = 60.0  # 60 seconds to test all gap settings
+    simulation_time = 60.0
     
     # Convert desired speed from km/h to m/s
-    desired_speed = 55.0 * 1000 / 3600  # 55 km/h to m/s
+    base_speed = 55.0 * 1000 / 3600  # 55 km/h to m/s
     
     print("Creating vehicle instances...")
     # Create vehicle instances
     ego_vehicle = EgoVehicle(
         initial_position=0.0,
-        initial_velocity=desired_speed,  # Start at desired speed
+        initial_velocity=base_speed,  # Start at base speed
         max_acceleration=2.0,
         min_acceleration=-3.0,
-        max_velocity=desired_speed * 1.2  # Allow some overshoot
+        max_velocity=base_speed * 1.2  # Allow some overshoot
     )
     
     # Set initial lead vehicle position with safe distance
@@ -110,20 +184,23 @@ def main():
     mpc_controller = MPCController(
         prediction_horizon=10,
         control_horizon=10,
-        desired_velocity=desired_speed,
+        desired_velocity=base_speed,
         desired_distance=20.0,
-        min_safe_distance=10.0,  # Increased minimum safe distance
+        min_safe_distance=10.0,
         q_velocity=1.0,
-        q_distance=2.0,  # Increased weight for distance tracking
+        q_distance=2.0,
         r_acceleration=0.1,
         r_jerk=0.1,
         max_jerk=2.0,
         opt_method='SLSQP'
     )
     
-    print("Running simulation...")
+    # Choose driver style
+    driver_style = 'balanced'  # Can be 'aggressive', 'balanced', or 'conservative'
+    
+    print(f"Running simulation with {driver_style} driver style...")
     # Run simulation
-    results = run_simulation(ego_vehicle, lead_vehicle, mpc_controller, dt, simulation_time)
+    results = run_simulation(ego_vehicle, lead_vehicle, mpc_controller, dt, simulation_time, driver_style)
     
     print("Generating plots...")
     # Plot results and performance metrics
@@ -136,7 +213,9 @@ def main():
         results[5],  # lead_vel_history
         results[6],  # distance_history
         mpc_controller.desired_velocity,
-        mpc_controller.desired_distance
+        mpc_controller.desired_distance,
+        results[7],  # gap_history
+        results[8]   # weight_history
     )
     print("Simulation complete!")
 

@@ -38,12 +38,20 @@ class MPCController:
         self.desired_velocity = desired_velocity
         self.desired_distance = desired_distance
         self.min_safe_distance = min_safe_distance
-        self.q_velocity = q_velocity
-        self.q_distance = q_distance
-        self.r_acceleration = r_acceleration
-        self.r_jerk = r_jerk
         self.max_jerk = max_jerk
         self.opt_method = opt_method
+        
+        # Initialize weights with default values
+        self.weights = {
+            'q_velocity': q_velocity,      # Velocity tracking weight
+            'q_distance': q_distance,      # Distance tracking weight
+            'r_acceleration': r_acceleration,  # Acceleration weight
+            'r_jerk': r_jerk,             # Jerk weight
+            'q_close': 10.0,              # Weight for being too close
+            'q_far': 1.0,                 # Weight for being too far
+            'q_safety': 1000.0,           # Weight for safety constraint violation
+            'q_jerk_violation': 1000.0    # Weight for jerk constraint violation
+        }
         
         # Gap settings (time gaps in seconds)
         self.gap_settings = {
@@ -55,6 +63,40 @@ class MPCController:
         
         # Initialize control sequence
         self.control_sequence = np.zeros(control_horizon)
+        
+    def calibrate_weights(self, weights_dict):
+        """
+        Calibrate MPC weights for different scenarios
+        
+        Parameters:
+        -----------
+        weights_dict : dict
+            Dictionary containing new weight values. Keys can be:
+            - q_velocity: Weight for velocity tracking
+            - q_distance: Weight for distance tracking
+            - r_acceleration: Weight for acceleration
+            - r_jerk: Weight for jerk
+            - q_close: Weight for being too close
+            - q_far: Weight for being too far
+            - q_safety: Weight for safety constraint violation
+            - q_jerk_violation: Weight for jerk constraint violation
+        """
+        for key, value in weights_dict.items():
+            if key in self.weights:
+                self.weights[key] = value
+            else:
+                print(f"Warning: Unknown weight key '{key}'")
+                
+    def get_current_weights(self):
+        """
+        Get current weight values
+        
+        Returns:
+        --------
+        dict
+            Dictionary containing current weight values
+        """
+        return self.weights.copy()
         
     def set_gap(self, gap_number):
         """
@@ -125,27 +167,31 @@ class MPCController:
             
             # Velocity tracking cost
             vel_error = current_state[1] - self.desired_velocity
-            total_cost += self.q_velocity * vel_error**2
+            total_cost += self.weights['q_velocity'] * vel_error**2
             
             # Distance tracking cost with asymmetric penalties
             dist_error = distance - step_desired_distance
             if dist_error < 0:  # If too close
-                total_cost += 10.0 * self.q_distance * dist_error**2  # Stronger penalty
+                total_cost += self.weights['q_close'] * self.weights['q_distance'] * dist_error**2
             else:
-                total_cost += self.q_distance * dist_error**2
+                total_cost += self.weights['q_far'] * self.weights['q_distance'] * dist_error**2
+            
+            # Safety distance constraint violation
+            if distance < self.min_safe_distance:
+                total_cost += self.weights['q_safety'] * (self.min_safe_distance - distance)**2
             
             # Acceleration cost
             if i < self.control_horizon:
-                total_cost += self.r_acceleration * control_sequence[i]**2
+                total_cost += self.weights['r_acceleration'] * control_sequence[i]**2
                 
                 # Jerk cost
                 if i > 0:
                     jerk = (control_sequence[i] - control_sequence[i-1]) / dt
-                    total_cost += self.r_jerk * jerk**2
+                    total_cost += self.weights['r_jerk'] * jerk**2
                     
                     # Penalty for exceeding max jerk
                     if abs(jerk) > self.max_jerk:
-                        total_cost += 1000.0 * (abs(jerk) - self.max_jerk)**2
+                        total_cost += self.weights['q_jerk_violation'] * (abs(jerk) - self.max_jerk)**2
         
         return total_cost
         
