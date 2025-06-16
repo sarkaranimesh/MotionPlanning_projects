@@ -6,17 +6,27 @@ class MPCController:
         self.horizon = horizon
         self.dt = dt
         self.min_safe_distance = min_safe_distance
+        self.max_jerk = 2.0  # Maximum allowed jerk (m/s³)
+        
+        # Initialize gap settings
+        self.gap_settings = {
+            'aggressive': 1.0,    # 1.0 seconds
+            'balanced': 2.0,      # 2.0 seconds
+            'conservative': 3.0   # 3.0 seconds
+        }
+        self.current_gap = 'balanced'  # Default gap setting
+        self.desired_velocity = 15.0   # Default desired velocity (m/s)
         
         # Initialize weights with more balanced values
         self.weights = {
-            'q_velocity': 0.5,      # Reduced from 1.0
-            'q_distance': 1.0,      # Reduced from 2.0
-            'r_acceleration': 0.5,  # Increased from 0.1
-            'r_jerk': 0.5,         # Increased from 0.1
-            'q_close': 5.0,        # Reduced from 10.0
-            'q_far': 0.5,          # Reduced from 1.0
-            'q_safety': 100.0,     # Reduced from 1000.0
-            'q_jerk_violation': 100.0  # Reduced from 1000.0
+            'q_velocity': 1.0,      # Increased from 0.5
+            'q_distance': 2.0,      # Increased from 1.0
+            'r_acceleration': 0.1,  # Decreased from 0.5
+            'r_jerk': 0.1,         # Decreased from 0.5
+            'q_close': 10.0,       # Increased from 5.0
+            'q_far': 1.0,          # Increased from 0.5
+            'q_safety': 100.0,     # Kept the same
+            'q_jerk_violation': 100.0  # Kept the same
         }
         
         # Store last control input for warm start
@@ -180,3 +190,20 @@ class MPCController:
                 self.last_control = np.zeros(self.horizon)
         
         return result.x[0] if result.success else 0.0 
+
+    def set_gap(self, gap_value):
+        """
+        Set the time gap for following distance
+        
+        Parameters:
+        -----------
+        gap_value : float
+            Time gap in seconds (1.0 for aggressive, 2.0 for balanced, 3.0 for conservative)
+        """
+        # Find the closest matching gap setting
+        if gap_value <= 1.0:
+            self.current_gap = 'aggressive'
+        elif gap_value <= 2.0:
+            self.current_gap = 'balanced'
+        else:
+            self.current_gap = 'conservative' 

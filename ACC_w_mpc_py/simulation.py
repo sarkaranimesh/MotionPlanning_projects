@@ -99,7 +99,7 @@ def run_simulation(driver_style='balanced', sim_time=60.0, dt=0.1):
     # Apply driver settings
     print(f"Running simulation with {driver_style} driver style...")
     settings = DRIVER_SETTINGS[driver_style]
-    mpc.calibrate_weights(settings['weights'])
+    apply_driver_settings(mpc, driver_style, 15.0)  # Base speed of 15 m/s
     
     # Initialize data storage
     time_history = []
@@ -121,7 +121,7 @@ def run_simulation(driver_style='balanced', sim_time=60.0, dt=0.1):
     
     while t < sim_time:
         # Update lead vehicle
-        lead_vehicle.update(dt)
+        lead_vehicle.update_state(dt, t)
         
         # Get current states
         ego_state = np.array([ego_vehicle.position, ego_vehicle.velocity])
@@ -130,8 +130,9 @@ def run_simulation(driver_style='balanced', sim_time=60.0, dt=0.1):
         # Calculate control input
         acceleration = mpc.optimize(ego_state, lead_state, dt)
         
-        # Update ego vehicle
-        ego_vehicle.update(acceleration, dt)
+        # Update ego vehicle with the calculated acceleration
+        ego_vehicle.acceleration = acceleration
+        ego_vehicle.update_state(dt)
         
         # Calculate jerk
         jerk = (acceleration - last_acceleration) / dt
@@ -145,8 +146,8 @@ def run_simulation(driver_style='balanced', sim_time=60.0, dt=0.1):
         acceleration_history.append(acceleration)
         jerk_history.append(jerk)
         gap_history.append(settings['gap'])
-        weights_history.append(mpc.get_weights())
-        speed_history.append(settings['desired_speed'])
+        weights_history.append(mpc.get_current_weights())
+        speed_history.append(settings['desired_speed_factor'])
         ego_pos_history.append(ego_vehicle.position)
         lead_pos_history.append(lead_vehicle.position)
         
@@ -155,8 +156,8 @@ def run_simulation(driver_style='balanced', sim_time=60.0, dt=0.1):
             print(f"Simulation time: {t:.1f}s")
             print("Current settings:")
             print(f"  - Gap: {settings['gap']}s")
-            print(f"  - Desired speed: {settings['desired_speed']} km/h")
-            print(f"  - Weights: {mpc.get_weights()}")
+            print(f"  - Desired speed: {ego_vehicle.velocity * 3.6:.1f} km/h")
+            print(f"  - Weights: {mpc.get_current_weights()}")
         
         t += dt
     
@@ -179,20 +180,26 @@ def run_simulation(driver_style='balanced', sim_time=60.0, dt=0.1):
     print("Generating plots...")
     plot_performance(
         time_history,
+        ego_pos_history,
         ego_vel_history,
+        lead_pos_history,
         lead_vel_history,
-        distance_history,
         acceleration_history,
-        jerk_history,
+        distance_history,
+        ego_vel_history[-1] * 3.6,  # Desired velocity
+        settings['gap'] * ego_vel_history[-1],  # Desired distance
         gap_history,
         weights_history,
-        speed_history,
-        ego_pos_history,
-        lead_pos_history
+        speed_history
     )
     
     print("Simulation complete!")
 
 if __name__ == "__main__":
-    # Run simulation with balanced driver style
-    run_simulation(driver_style='balanced', sim_time=60.0, dt=0.1) 
+    # Run simulation with aggressive driver style
+    print("\n=== Running Aggressive Driver Style Simulation ===")
+    run_simulation(driver_style='aggressive', sim_time=60.0, dt=0.1)
+    
+    # Run simulation with conservative driver style
+    print("\n=== Running Conservative Driver Style Simulation ===")
+    run_simulation(driver_style='conservative', sim_time=60.0, dt=0.1) 

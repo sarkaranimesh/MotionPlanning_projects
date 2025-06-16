@@ -82,92 +82,82 @@ def plot_performance(time_history, ego_pos_history, ego_vel_history, lead_pos_hi
                     desired_velocity, desired_distance, gap_history=None, weight_history=None,
                     speed_history=None):
     """
-    Plot performance metrics for the ACC controller
-    
-    Parameters:
-    -----------
-    time_history : list
-        Time points
-    ego_pos_history : list
-        Ego vehicle position history
-    ego_vel_history : list
-        Ego vehicle velocity history
-    lead_pos_history : list
-        Lead vehicle position history
-    lead_vel_history : list
-        Lead vehicle velocity history
-    ego_accel_history : list
-        Ego vehicle acceleration history
-    distance_history : list
-        Following distance history
-    desired_velocity : float
-        Desired velocity
-    desired_distance : float
-        Desired following distance
-    gap_history : list, optional
-        History of time gap settings
-    weight_history : list, optional
-        History of MPC weights
-    speed_history : list, optional
-        History of desired speed changes
+    Plot performance metrics for the ACC controller with dark theme
     """
+    # Set dark theme
+    plt.style.use('dark_background')
+    
     # Calculate jerk
     dt = time_history[1] - time_history[0]
     jerk = np.diff(ego_accel_history) / dt
     jerk_time = time_history[:-1]  # One less point for jerk
     
-    # Create figure with subplots
-    fig = plt.figure(figsize=(15, 15))
-    gs = fig.add_gridspec(8, 2)  # Added one more row for speed changes
+    # Create two figures
+    # Figure 1: Vehicle Kinematics
+    fig1 = plt.figure(figsize=(15, 10))
+    gs1 = fig1.add_gridspec(4, 1)
     
     # Position tracking
-    ax0 = fig.add_subplot(gs[0, :])
-    ax0.plot(time_history, ego_pos_history, label='Ego Vehicle Position')
-    ax0.plot(time_history, lead_pos_history, label='Lead Vehicle Position')
-    ax0.set_ylabel('Position (m)')
+    ax0 = fig1.add_subplot(gs1[0, 0])
+    ax0.plot(time_history, ego_pos_history, label='Ego Vehicle', color='#00ff00')
+    ax0.plot(time_history, lead_pos_history, label='Lead Vehicle', color='#ff0000')
+    ax0.set_ylabel('Position (m)', color='white')
     ax0.legend()
-    ax0.grid(True)
-    ax0.set_title('Vehicle Positions')
+    ax0.grid(True, alpha=0.3)
+    ax0.set_title('Vehicle Positions', color='white')
     
     # Velocity tracking
-    ax1 = fig.add_subplot(gs[1, :])
-    ax1.plot(time_history, ego_vel_history, label='Ego Vehicle')
-    ax1.plot(time_history, lead_vel_history, label='Lead Vehicle')
+    ax1 = fig1.add_subplot(gs1[1, 0])
+    ax1.plot(time_history, ego_vel_history, label='Ego Vehicle', color='#00ff00')
+    ax1.plot(time_history, lead_vel_history, label='Lead Vehicle', color='#ff0000')
     if speed_history is not None:
-        ax1.plot(time_history, speed_history, 'r--', label='Desired Speed')
+        ax1.plot(time_history, speed_history, '--', label='Desired Speed', color='#ffff00')
     else:
-        ax1.axhline(y=desired_velocity, color='r', linestyle='--', label='Desired Speed')
-    ax1.set_ylabel('Velocity (m/s)')
+        ax1.axhline(y=desired_velocity, color='#ffff00', linestyle='--', label='Desired Speed')
+    ax1.set_ylabel('Velocity (m/s)', color='white')
     ax1.legend()
-    ax1.grid(True)
-    ax1.set_title('Velocity Tracking')
+    ax1.grid(True, alpha=0.3)
+    ax1.set_title('Velocity Tracking', color='white')
     
     # Distance tracking
-    ax2 = fig.add_subplot(gs[2, :])
-    ax2.plot(time_history, distance_history, label='Actual Distance')
+    ax2 = fig1.add_subplot(gs1[2, 0])
+    ax2.plot(time_history, distance_history, label='Actual Distance', color='#00ffff')
     if gap_history is not None:
-        # Plot desired distance based on current velocity and gap setting
         desired_distances = [v * g for v, g in zip(ego_vel_history, gap_history)]
-        ax2.plot(time_history, desired_distances, 'r--', label='Desired Distance')
+        ax2.plot(time_history, desired_distances, '--', label='Desired Distance', color='#ffff00')
     else:
-        ax2.axhline(y=desired_distance, color='r', linestyle='--', label='Desired Distance')
-    ax2.set_ylabel('Distance (m)')
+        ax2.axhline(y=desired_distance, color='#ffff00', linestyle='--', label='Desired Distance')
+    ax2.set_ylabel('Distance (m)', color='white')
     ax2.legend()
-    ax2.grid(True)
-    ax2.set_title('Distance Tracking')
+    ax2.grid(True, alpha=0.3)
+    ax2.set_title('Distance Tracking', color='white')
+    
+    # Acceleration and Jerk
+    ax3 = fig1.add_subplot(gs1[3, 0])
+    ax3.plot(time_history, ego_accel_history, label='Acceleration', color='#ff00ff')
+    ax3.plot(jerk_time, jerk, label='Jerk', color='#00ffff')
+    ax3.set_xlabel('Time (s)', color='white')
+    ax3.set_ylabel('Acceleration (m/s²), Jerk (m/s³)', color='white')
+    ax3.legend()
+    ax3.grid(True, alpha=0.3)
+    ax3.set_title('Acceleration and Jerk', color='white')
+    
+    # Figure 2: Controller Performance
+    fig2 = plt.figure(figsize=(15, 10))
+    gs2 = fig2.add_gridspec(3, 1)
     
     # Gap settings
     if gap_history is not None:
-        ax3 = fig.add_subplot(gs[3, :])
-        ax3.plot(time_history, gap_history, 'g-', label='Time Gap')
-        ax3.set_ylabel('Time Gap (s)')
-        ax3.legend()
-        ax3.grid(True)
-        ax3.set_title('Time Gap Settings')
+        ax4 = fig2.add_subplot(gs2[0, 0])
+        ax4.plot(time_history, gap_history, label='Time Gap', color='#00ff00')
+        ax4.set_ylabel('Time Gap (s)', color='white')
+        ax4.legend()
+        ax4.grid(True, alpha=0.3)
+        ax4.set_title('Time Gap Settings', color='white')
     
     # Weight changes
     if weight_history is not None:
-        ax4 = fig.add_subplot(gs[4, :])
+        ax5 = fig2.add_subplot(gs2[1, 0])
         weights = {
             'q_velocity': [],
             'q_distance': [],
@@ -180,59 +170,27 @@ def plot_performance(time_history, ego_pos_history, ego_vel_history, lead_pos_hi
             for key in weights:
                 weights[key].append(w[key])
         
-        for key, values in weights.items():
-            ax4.plot(time_history, values, label=key)
-        ax4.set_ylabel('Weight Value')
-        ax4.legend()
-        ax4.grid(True)
-        ax4.set_title('MPC Weight Changes')
+        colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff']
+        for (key, values), color in zip(weights.items(), colors):
+            ax5.plot(time_history, values, label=key, color=color)
+        ax5.set_ylabel('Weight Value', color='white')
+        ax5.legend()
+        ax5.grid(True, alpha=0.3)
+        ax5.set_title('MPC Weight Changes', color='white')
     
     # Speed changes
     if speed_history is not None:
-        ax5 = fig.add_subplot(gs[5, :])
-        ax5.plot(time_history, speed_history, 'b-', label='Desired Speed')
-        ax5.set_ylabel('Speed (m/s)')
-        ax5.legend()
-        ax5.grid(True)
-        ax5.set_title('Desired Speed Changes')
+        ax6 = fig2.add_subplot(gs2[2, 0])
+        ax6.plot(time_history, speed_history, label='Desired Speed', color='#ffff00')
+        ax6.set_xlabel('Time (s)', color='white')
+        ax6.set_ylabel('Speed (m/s)', color='white')
+        ax6.legend()
+        ax6.grid(True, alpha=0.3)
+        ax6.set_title('Desired Speed Changes', color='white')
     
-    # Acceleration
-    ax6 = fig.add_subplot(gs[6, 0])
-    ax6.plot(time_history, ego_accel_history)
-    ax6.set_xlabel('Time (s)')
-    ax6.set_ylabel('Acceleration (m/s²)')
-    ax6.grid(True)
-    ax6.set_title('Acceleration')
-    
-    # Jerk
-    ax7 = fig.add_subplot(gs[6, 1])
-    ax7.plot(jerk_time, jerk)
-    ax7.set_xlabel('Time (s)')
-    ax7.set_ylabel('Jerk (m/s³)')
-    ax7.grid(True)
-    ax7.set_title('Jerk')
-    
-    # Error distributions
-    ax8 = fig.add_subplot(gs[7, 0])
-    vel_error = np.array(ego_vel_history) - desired_velocity
-    ax8.hist(vel_error, bins=30, density=True)
-    ax8.set_xlabel('Velocity Error (m/s)')
-    ax8.set_ylabel('Density')
-    ax8.grid(True)
-    ax8.set_title('Velocity Error Distribution')
-    
-    ax9 = fig.add_subplot(gs[7, 1])
-    if gap_history is not None:
-        dist_error = np.array(distance_history) - np.array(desired_distances)
-    else:
-        dist_error = np.array(distance_history) - desired_distance
-    ax9.hist(dist_error, bins=30, density=True)
-    ax9.set_xlabel('Distance Error (m)')
-    ax9.set_ylabel('Density')
-    ax9.grid(True)
-    ax9.set_title('Distance Error Distribution')
-    
-    plt.tight_layout()
+    # Adjust layout and show plots
+    fig1.tight_layout()
+    fig2.tight_layout()
     plt.show()
     
     # Print performance metrics
