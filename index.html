@@ -1,1 +1,52 @@
- 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MPC Adaptive Cruise Control Report</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #181818; color: #f0f0f0; margin: 0; padding: 0; }
+        .container { max-width: 800px; margin: 40px auto; background: #232323; border-radius: 10px; box-shadow: 0 0 10px #0008; padding: 32px; }
+        h1, h2, h3 { color: #ffcc00; }
+        a { color: #00bfff; }
+        .metrics { background: #222; border-radius: 8px; padding: 16px; margin: 16px 0; }
+        .metrics table { width: 100%; border-collapse: collapse; }
+        .metrics th, .metrics td { padding: 8px; border-bottom: 1px solid #333; }
+        .metrics th { text-align: left; color: #ffcc00; }
+        .metrics tr:last-child td { border-bottom: none; }
+        .footer { margin-top: 32px; text-align: center; color: #888; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Adaptive Cruise Control with Model Predictive Control</h1>
+        <p>This page presents the results of the MPC-based Adaptive Cruise Control simulation. The project code and details are available on <a href="https://github.com/sarkaranimesh/MotionPlanning_projects" target="_blank">GitHub</a>.</p>
+        <h2>Simulation Results (Conservative Driver)</h2>
+        <div class="metrics">
+            <table>
+                <tr><th>Metric</th><th>Value</th></tr>
+                <tr><td>Velocity RMSE</td><td>8.13 m/s</td></tr>
+                <tr><td>Velocity MAE</td><td>7.42 m/s</td></tr>
+                <tr><td>Distance RMSE</td><td>13.60 m</td></tr>
+                <tr><td>Distance MAE</td><td>10.68 m</td></tr>
+                <tr><td>Mean Acceleration</td><td>1.07 m/s²</td></tr>
+                <tr><td>Max Acceleration</td><td>3.00 m/s²</td></tr>
+                <tr><td>Mean Jerk</td><td>0.55 m/s³</td></tr>
+                <tr><td>Max Jerk</td><td>10.38 m/s³</td></tr>
+                <tr><td>Comfort Index</td><td>3.14</td></tr>
+            </table>
+        </div>
+        <h3>How to Reproduce</h3>
+        <ol>
+            <li>Clone the <a href="https://github.com/sarkaranimesh/MotionPlanning_projects" target="_blank">GitHub repository</a>.</li>
+            <li>Follow the setup instructions in <code>ACC_w_mpc_py/README.md</code>.</li>
+            <li>Run <code>python simulation.py</code> to generate new results and plots.</li>
+        </ol>
+        <h3>About</h3>
+        <p>This project demonstrates the use of Model Predictive Control for Adaptive Cruise Control, simulating different driver styles and analyzing performance metrics.</p>
+        <div class="footer">
+            &copy; 2024 <a href="https://github.com/sarkaranimesh/MotionPlanning_projects" target="_blank">GitHub Project</a>
+        </div>
+    </div>
+</body>
+</html> 
