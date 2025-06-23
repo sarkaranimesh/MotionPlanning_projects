@@ -32,7 +32,7 @@ DRIVER_SETTINGS = {
     },
     'conservative': {
         'gap': 3,  # Longest gap (2.5s)
-        'desired_speed_factor': 0.9,  # 10% slower than default
+        'desired_speed_factor': 1.0,  # 10% slower than default
         'weights': {
             'q_velocity': 0.5,      # Lower weight for velocity tracking
             'q_distance': 3.0,      # Highest weight for distance
