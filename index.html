@@ -6,7 +6,7 @@
     <title>MPC Adaptive Cruise Control Report</title>
     <style>
         body { font-family: Arial, sans-serif; background: #181818; color: #f0f0f0; margin: 0; padding: 0; }
-        .container { max-width: 800px; margin: 40px auto; background: #232323; border-radius: 10px; box-shadow: 0 0 10px #0008; padding: 32px; }
+            .container { max-width: 900px; margin: 40px auto; background: #232323; border-radius: 10px; box-shadow: 0 0 10px #0008; padding: 32px; }
         h1, h2, h3 { color: #ffcc00; }
         a { color: #00bfff; }
         .metrics { background: #222; border-radius: 8px; padding: 16px; margin: 16px 0; }
@@ -15,12 +15,28 @@
         .metrics th { text-align: left; color: #ffcc00; }
         .metrics tr:last-child td { border-bottom: none; }
         .footer { margin-top: 32px; text-align: center; color: #888; }
+        .sim-section { margin: 32px 0; }
+        .sim-images { display: flex; flex-wrap: wrap; gap: 24px; justify-content: center; }
+        .sim-images img { max-width: 420px; width: 100%; border-radius: 8px; background: #111; box-shadow: 0 0 8px #000a; }
+        label, select { font-size: 1.1em; }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Adaptive Cruise Control with Model Predictive Control</h1>
         <p>This page presents the results of the MPC-based Adaptive Cruise Control simulation. The project code and details are available on <a href="https://github.com/sarkaranimesh/MotionPlanning_projects" target="_blank">GitHub</a>.</p>
+        <div class="sim-section">
+            <label for="style-select"><b>Select Driver Style:</b></label>
+            <select id="style-select">
+                <option value="aggressive">Aggressive</option>
+                <option value="balanced">Balanced</option>
+                <option value="conservative">Conservative</option>
+            </select>
+            <div class="sim-images">
+                <img id="plot1" src="docs/images/mpc_aggressive/mpc_aggressive_1.png" alt="Kinematics Plot">
+                <img id="plot2" src="docs/images/mpc_aggressive/mpc_aggressive_2.png" alt="Controller Performance Plot">
+            </div>
+        </div>
         <h2>Simulation Results (Conservative Driver)</h2>
         <div class="metrics">
             <table>
@@ -48,5 +64,15 @@
             &copy; 2024 <a href="https://github.com/sarkaranimesh/MotionPlanning_projects" target="_blank">GitHub Project</a>
         </div>
     </div>
+    <script>
+        const styleSelect = document.getElementById('style-select');
+        const plot1 = document.getElementById('plot1');
+        const plot2 = document.getElementById('plot2');
+        styleSelect.addEventListener('change', function() {
+            const style = styleSelect.value;
+            plot1.src = `docs/images/mpc_${style}_1.png`;
+            plot2.src = `docs/images/mpc_${style}_2.png`;
+        });
+    </script>
 </body>
 </html> 
