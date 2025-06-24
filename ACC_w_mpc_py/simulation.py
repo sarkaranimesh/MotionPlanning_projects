@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 from vehicle_dynamics import EgoVehicle, LeadVehicle
 from mpc_controller import MPCController
 from performance_analysis import plot_performance
+import json
 
 # Driver settings with predefined calibrations
 DRIVER_SETTINGS = {
@@ -180,7 +181,7 @@ def run_simulation(driver_style='balanced', sim_time=60.0, dt=0.1, save_path=Non
     
     # Plot results
     print("Generating plots...")
-    plot_performance(
+    metrics = plot_performance(
         time_history,
         ego_pos_history,
         ego_vel_history,
@@ -197,13 +198,28 @@ def run_simulation(driver_style='balanced', sim_time=60.0, dt=0.1, save_path=Non
     )
     
     print("Simulation complete!")
+    return metrics
 
 def run_all_styles_and_save():
+    all_metrics = {}
     styles = ['aggressive', 'balanced', 'conservative']
     for style in styles:
         print(f"\n=== Running {style.capitalize()} Driver Style Simulation ===")
         save_path = f"../docs/images/mpc_{style}"
-        run_simulation(driver_style=style, sim_time=60.0, dt=0.1, save_path=save_path)
+        all_metrics[style] = run_simulation(driver_style=style, sim_time=60.0, dt=0.1, save_path=save_path)
+
+    print("\n\n--- All Performance Metrics ---")
+    # Convert numpy types to native Python types for JSON serialization
+    def convert_numpy(obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        elif isinstance(obj, np.floating):
+            return float(obj)
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return obj
+
+    print(json.dumps(all_metrics, indent=4, default=convert_numpy))
 
 if __name__ == "__main__":
     run_all_styles_and_save() 

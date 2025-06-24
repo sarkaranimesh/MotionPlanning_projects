@@ -216,4 +216,6 @@ def plot_performance(time_history, ego_pos_history, ego_vel_history, lead_pos_hi
     print(f"Max Acceleration: {metrics['accel_max']:.2f} m/s²")
     print(f"Mean Jerk: {metrics['jerk_mean']:.2f} m/s³")
     print(f"Max Jerk: {metrics['jerk_max']:.2f} m/s³")
-    print(f"Comfort Index: {metrics['comfort_index']:.2f}") 
+    print(f"Comfort Index: {metrics['comfort_index']:.2f}")
+
+    return metrics 
