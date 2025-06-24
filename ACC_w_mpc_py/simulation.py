@@ -71,7 +71,7 @@ def apply_driver_settings(mpc_controller, driver_style, base_speed):
     # Apply weights
     mpc_controller.calibrate_weights(settings['weights'])
 
-def run_simulation(driver_style='balanced', sim_time=60.0, dt=0.1):
+def run_simulation(driver_style='balanced', sim_time=60.0, dt=0.1, save_path=None):
     """
     Run the ACC simulation with specified driver style
     
@@ -83,6 +83,8 @@ def run_simulation(driver_style='balanced', sim_time=60.0, dt=0.1):
         Total simulation time (s)
     dt : float
         Time step (s)
+    save_path : str or None
+        Path to save the plot, or None to not save
     """
     # Initialize simulation parameters
     print("\nInitializing simulation parameters...")
@@ -190,16 +192,18 @@ def run_simulation(driver_style='balanced', sim_time=60.0, dt=0.1):
         settings['gap'] * ego_vel_history[-1],  # Desired distance
         gap_history,
         weights_history,
-        speed_history
+        speed_history,
+        save_path=save_path
     )
     
     print("Simulation complete!")
 
+def run_all_styles_and_save():
+    styles = ['aggressive', 'balanced', 'conservative']
+    for style in styles:
+        print(f"\n=== Running {style.capitalize()} Driver Style Simulation ===")
+        save_path = f"../docs/images/mpc_{style}"
+        run_simulation(driver_style=style, sim_time=60.0, dt=0.1, save_path=save_path)
+
 if __name__ == "__main__":
-    # Run simulation with aggressive driver style
-    print("\n=== Running Aggressive Driver Style Simulation ===")
-    run_simulation(driver_style='aggressive', sim_time=60.0, dt=0.1)
-    
-    # Run simulation with conservative driver style
-    print("\n=== Running Conservative Driver Style Simulation ===")
-    run_simulation(driver_style='conservative', sim_time=60.0, dt=0.1) 
+    run_all_styles_and_save() 

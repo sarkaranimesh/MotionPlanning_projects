@@ -80,9 +80,10 @@ def calculate_performance_metrics(time_history, ego_vel_history, lead_vel_histor
 def plot_performance(time_history, ego_pos_history, ego_vel_history, lead_pos_history,
                     lead_vel_history, ego_accel_history, distance_history,
                     desired_velocity, desired_distance, gap_history=None, weight_history=None,
-                    speed_history=None):
+                    speed_history=None, save_path=None):
     """
     Plot performance metrics for the ACC controller with dark theme
+    If save_path is provided, saves the plots as PNG images instead of showing them.
     """
     # Set dark theme
     plt.style.use('dark_background')
@@ -191,7 +192,13 @@ def plot_performance(time_history, ego_pos_history, ego_vel_history, lead_pos_hi
     # Adjust layout and show plots
     fig1.tight_layout()
     fig2.tight_layout()
-    plt.show()
+    if save_path:
+        fig1.savefig(f"{save_path}_1.png")
+        fig2.savefig(f"{save_path}_2.png")
+        plt.close(fig1)
+        plt.close(fig2)
+    else:
+        plt.show()
     
     # Print performance metrics
     metrics = calculate_performance_metrics(
