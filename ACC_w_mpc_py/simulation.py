@@ -4,6 +4,7 @@ from vehicle_dynamics import EgoVehicle, LeadVehicle
 from mpc_controller import MPCController
 from performance_analysis import plot_performance
 import json
+import os
 
 # Driver settings with predefined calibrations
 DRIVER_SETTINGS = {
@@ -203,13 +204,29 @@ def run_simulation(driver_style='balanced', sim_time=60.0, dt=0.1, save_path=Non
 def run_all_styles_and_save():
     all_metrics = {}
     styles = ['aggressive', 'balanced', 'conservative']
+    
+    # Define the base path for the docs folder content
+    docs_path = "../docs"
+    base_image_path = os.path.join(docs_path, "images")
+    os.makedirs(base_image_path, exist_ok=True)
+
     for style in styles:
         print(f"\n=== Running {style.capitalize()} Driver Style Simulation ===")
-        save_path = f"../docs/images/mpc_{style}"
-        all_metrics[style] = run_simulation(driver_style=style, sim_time=60.0, dt=0.1, save_path=save_path)
+        
+        # Create a subdirectory for each style's images
+        style_image_dir = os.path.join(base_image_path, style)
+        os.makedirs(style_image_dir, exist_ok=True)
 
-    print("\n\n--- All Performance Metrics ---")
-    # Convert numpy types to native Python types for JSON serialization
+        # Define the full save path for the plots, without the file extension
+        save_path = os.path.join(style_image_dir, f"mpc_{style}")
+        
+        metrics = run_simulation(driver_style=style, sim_time=60.0, dt=0.1, save_path=save_path)
+        all_metrics[style] = metrics
+
+    # Save all collected metrics to a single JSON file in the docs folder
+    metrics_path = os.path.join(docs_path, "metrics.json")
+
+    # Helper function to convert numpy types for JSON
     def convert_numpy(obj):
         if isinstance(obj, np.integer):
             return int(obj)
@@ -218,8 +235,12 @@ def run_all_styles_and_save():
         elif isinstance(obj, np.ndarray):
             return obj.tolist()
         return obj
+    
+    with open(metrics_path, 'w') as f:
+        json.dump(all_metrics, f, indent=4, default=convert_numpy)
+        
+    print(f"\n\n--- All Performance Metrics saved to {metrics_path} ---")
 
-    print(json.dumps(all_metrics, indent=4, default=convert_numpy))
 
 if __name__ == "__main__":
     run_all_styles_and_save() 

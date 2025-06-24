@@ -6,113 +6,122 @@
     <title>MPC Adaptive Cruise Control Report</title>
     <style>
         body { font-family: Arial, sans-serif; background: #181818; color: #f0f0f0; margin: 0; padding: 0; }
-            .container { max-width: 900px; margin: 40px auto; background: #232323; border-radius: 10px; box-shadow: 0 0 10px #0008; padding: 32px; }
+        .container { max-width: 900px; margin: 40px auto; background: #232323; border-radius: 10px; box-shadow: 0 0 10px #0008; padding: 32px; }
         h1, h2, h3 { color: #ffcc00; }
         a { color: #00bfff; }
-        .metrics { background: #222; border-radius: 8px; padding: 16px; margin: 16px 0; }
+        .sim-section { margin-bottom: 32px; }
+        label, select { font-size: 1.1em; margin-bottom: 16px; display: inline-block; }
+        select { padding: 8px; border-radius: 4px; background: #333; color: #f0f0f0; border: 1px solid #555; }
+        .sim-images { display: flex; flex-wrap: wrap; gap: 24px; justify-content: center; margin-bottom: 24px; }
+        .sim-images img { max-width: 420px; width: 100%; border-radius: 8px; background: #111; box-shadow: 0 0 8px #000a; }
+        .metrics { background: #222; border-radius: 8px; padding: 16px; }
         .metrics table { width: 100%; border-collapse: collapse; }
-        .metrics th, .metrics td { padding: 8px; border-bottom: 1px solid #333; }
-        .metrics th { text-align: left; color: #ffcc00; }
+        .metrics th, .metrics td { padding: 12px 8px; border-bottom: 1px solid #333; text-align: left; }
+        .metrics th { color: #ffcc00; }
         .metrics tr:last-child td { border-bottom: none; }
         .footer { margin-top: 32px; text-align: center; color: #888; }
-        .sim-section { margin: 32px 0; }
-        .sim-images { display: flex; flex-wrap: wrap; gap: 24px; justify-content: center; }
-        .sim-images img { max-width: 420px; width: 100%; border-radius: 8px; background: #111; box-shadow: 0 0 8px #000a; }
-        label, select { font-size: 1.1em; }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Adaptive Cruise Control with Model Predictive Control</h1>
         <p>This page presents the results of the MPC-based Adaptive Cruise Control simulation. The project code and details are available on <a href="https://github.com/sarkaranimesh/MotionPlanning_projects" target="_blank">GitHub</a>.</p>
+        
         <div class="sim-section">
             <label for="style-select"><b>Select Driver Style:</b></label>
             <select id="style-select">
                 <option value="aggressive">Aggressive</option>
-                <option value="balanced">Balanced</option>
+                <option value="balanced" selected>Balanced</option>
                 <option value="conservative">Conservative</option>
             </select>
+            
             <div class="sim-images">
-                <img id="plot1" src="docs/images/mpc_aggressive/mpc_aggressive_1.png" alt="Kinematics Plot">
-                <img id="plot2" src="docs/images/mpc_aggressive/mpc_aggressive_2.png" alt="Controller Performance Plot">
+                <img id="plot1" src="" alt="Vehicle Kinematics Plot">
+                <img id="plot2" src="" alt="Controller Performance Plot">
+            </div>
+
+            <div class="metrics">
+                <h3 id="metrics-title">Performance Metrics</h3>
+                <table>
+                    <thead>
+                        <tr><th>Metric</th><th>Value</th></tr>
+                    </thead>
+                    <tbody id="metrics-table-body">
+                        <!-- Metrics will be loaded here by JavaScript -->
+                    </tbody>
+                </table>
             </div>
         </div>
-        <h2>Simulation Results (Conservative Driver)</h2>
-        <div class="metrics">
-            <table>
-                <thead>
-                    <tr><th>Metric</th><th>Value</th></tr>
-                </thead>
-                <tbody id="metrics-table-body"></tbody>
-            </table>
-        </div>
+
         <h3>How to Reproduce</h3>
         <ol>
             <li>Clone the <a href="https://github.com/sarkaranimesh/MotionPlanning_projects" target="_blank">GitHub repository</a>.</li>
             <li>Follow the setup instructions in <code>ACC_w_mpc_py/README.md</code>.</li>
-            <li>Run <code>python simulation.py</code> to generate new results and plots.</li>
+            <li>Run <code>python ACC_w_mpc_py/simulation.py</code> to generate new plots and the <code>metrics.json</code> file.</li>
         </ol>
+        
         <h3>About</h3>
         <p>This project demonstrates the use of Model Predictive Control for Adaptive Cruise Control, simulating different driver styles and analyzing performance metrics.</p>
+        
         <div class="footer">
             &copy; 2024 <a href="https://github.com/sarkaranimesh/MotionPlanning_projects" target="_blank">GitHub Project</a>
         </div>
     </div>
+
     <script>
-        const styleSelect = document.getElementById('style-select');
-        const plot1 = document.getElementById('plot1');
-        const plot2 = document.getElementById('plot2');
-        const metrics = {
-            aggressive: {
-                "Velocity RMSE": "X.XX m/s",
-                "Velocity MAE": "X.XX m/s",
-                "Distance RMSE": "X.XX m",
-                "Distance MAE": "X.XX m",
-                "Mean Acceleration": "X.XX m/s²",
-                "Max Acceleration": "X.XX m/s²",
-                "Mean Jerk": "X.XX m/s³",
-                "Max Jerk": "X.XX m/s³",
-                "Comfort Index": "X.XX"
-            },
-            balanced: {
-                "Velocity RMSE": "Y.YY m/s",
-                "Velocity MAE": "Y.YY m/s",
-                "Distance RMSE": "Y.YY m",
-                "Distance MAE": "Y.YY m",
-                "Mean Acceleration": "Y.YY m/s²",
-                "Max Acceleration": "Y.YY m/s²",
-                "Mean Jerk": "Y.YY m/s³",
-                "Max Jerk": "Y.YY m/s³",
-                "Comfort Index": "Y.YY"
-            },
-            conservative: {
-                "Velocity RMSE": "8.13 m/s",
-                "Velocity MAE": "7.42 m/s",
-                "Distance RMSE": "13.60 m",
-                "Distance MAE": "10.68 m",
-                "Mean Acceleration": "1.07 m/s²",
-                "Max Acceleration": "3.00 m/s²",
-                "Mean Jerk": "0.55 m/s³",
-                "Max Jerk": "10.38 m/s³",
-                "Comfort Index": "3.14"
+        document.addEventListener('DOMContentLoaded', function() {
+            const styleSelect = document.getElementById('style-select');
+            const plot1 = document.getElementById('plot1');
+            const plot2 = document.getElementById('plot2');
+            const metricsTableBody = document.getElementById('metrics-table-body');
+            const metricsTitle = document.getElementById('metrics-title');
+            
+            let allMetricsData = {};
+
+            function formatMetricName(key) {
+                return key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
             }
-        };
-        function updateMetricsTable(style) {
-            const tbody = document.getElementById('metrics-table-body');
-            tbody.innerHTML = '';
-            for (const [metric, value] of Object.entries(metrics[style])) {
-                const row = document.createElement('tr');
-                row.innerHTML = `<td>${metric}</td><td>${value}</td>`;
-                tbody.appendChild(row);
+
+            function updateDisplay(style) {
+                // Update images
+                plot1.src = `docs/images/${style}/mpc_${style}_1.png`;
+                plot2.src = `docs/images/${style}/mpc_${style}_2.png`;
+
+                // Update metrics title
+                metricsTitle.textContent = `Performance Metrics (${style.charAt(0).toUpperCase() + style.slice(1)})`;
+
+                // Update metrics table
+                const metricsData = allMetricsData[style];
+                metricsTableBody.innerHTML = ''; // Clear previous metrics
+                if (metricsData) {
+                    for (const [key, value] of Object.entries(metricsData)) {
+                        const row = document.createElement('tr');
+                        const formattedKey = formatMetricName(key);
+                        const formattedValue = typeof value === 'number' ? value.toFixed(2) : value;
+                        row.innerHTML = `<td>${formattedKey}</td><td>${formattedValue}</td>`;
+                        metricsTableBody.appendChild(row);
+                    }
+                }
             }
-        }
-        // Initial load
-        updateMetricsTable('aggressive');
-        styleSelect.addEventListener('change', function() {
-            const style = styleSelect.value;
-            plot1.src = `docs/images/mpc_${style}/mpc_${style}_1.png`;
-            plot2.src = `docs/images/mpc_${style}/mpc_${style}_2.png`;
-            updateMetricsTable(style);
+
+            // Fetch metrics data and initialize the page
+            fetch('docs/metrics.json')
+                .then(response => response.json())
+                .then(data => {
+                    allMetricsData = data;
+                    // Initialize with the default selected value
+                    const initialStyle = styleSelect.value;
+                    updateDisplay(initialStyle);
+                })
+                .catch(error => {
+                    console.error('Error loading metrics data:', error);
+                    metricsTableBody.innerHTML = '<tr><td colspan="2">Could not load metrics data.</td></tr>';
+                });
+
+            // Add event listener for dropdown changes
+            styleSelect.addEventListener('change', function() {
+                updateDisplay(this.value);
+            });
         });
     </script>
 </body>
