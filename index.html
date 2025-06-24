@@ -40,16 +40,10 @@
         <h2>Simulation Results (Conservative Driver)</h2>
         <div class="metrics">
             <table>
-                <tr><th>Metric</th><th>Value</th></tr>
-                <tr><td>Velocity RMSE</td><td>8.13 m/s</td></tr>
-                <tr><td>Velocity MAE</td><td>7.42 m/s</td></tr>
-                <tr><td>Distance RMSE</td><td>13.60 m</td></tr>
-                <tr><td>Distance MAE</td><td>10.68 m</td></tr>
-                <tr><td>Mean Acceleration</td><td>1.07 m/s²</td></tr>
-                <tr><td>Max Acceleration</td><td>3.00 m/s²</td></tr>
-                <tr><td>Mean Jerk</td><td>0.55 m/s³</td></tr>
-                <tr><td>Max Jerk</td><td>10.38 m/s³</td></tr>
-                <tr><td>Comfort Index</td><td>3.14</td></tr>
+                <thead>
+                    <tr><th>Metric</th><th>Value</th></tr>
+                </thead>
+                <tbody id="metrics-table-body"></tbody>
             </table>
         </div>
         <h3>How to Reproduce</h3>
@@ -68,10 +62,57 @@
         const styleSelect = document.getElementById('style-select');
         const plot1 = document.getElementById('plot1');
         const plot2 = document.getElementById('plot2');
+        const metrics = {
+            aggressive: {
+                "Velocity RMSE": "X.XX m/s",
+                "Velocity MAE": "X.XX m/s",
+                "Distance RMSE": "X.XX m",
+                "Distance MAE": "X.XX m",
+                "Mean Acceleration": "X.XX m/s²",
+                "Max Acceleration": "X.XX m/s²",
+                "Mean Jerk": "X.XX m/s³",
+                "Max Jerk": "X.XX m/s³",
+                "Comfort Index": "X.XX"
+            },
+            balanced: {
+                "Velocity RMSE": "Y.YY m/s",
+                "Velocity MAE": "Y.YY m/s",
+                "Distance RMSE": "Y.YY m",
+                "Distance MAE": "Y.YY m",
+                "Mean Acceleration": "Y.YY m/s²",
+                "Max Acceleration": "Y.YY m/s²",
+                "Mean Jerk": "Y.YY m/s³",
+                "Max Jerk": "Y.YY m/s³",
+                "Comfort Index": "Y.YY"
+            },
+            conservative: {
+                "Velocity RMSE": "8.13 m/s",
+                "Velocity MAE": "7.42 m/s",
+                "Distance RMSE": "13.60 m",
+                "Distance MAE": "10.68 m",
+                "Mean Acceleration": "1.07 m/s²",
+                "Max Acceleration": "3.00 m/s²",
+                "Mean Jerk": "0.55 m/s³",
+                "Max Jerk": "10.38 m/s³",
+                "Comfort Index": "3.14"
+            }
+        };
+        function updateMetricsTable(style) {
+            const tbody = document.getElementById('metrics-table-body');
+            tbody.innerHTML = '';
+            for (const [metric, value] of Object.entries(metrics[style])) {
+                const row = document.createElement('tr');
+                row.innerHTML = `<td>${metric}</td><td>${value}</td>`;
+                tbody.appendChild(row);
+            }
+        }
+        // Initial load
+        updateMetricsTable('aggressive');
         styleSelect.addEventListener('change', function() {
             const style = styleSelect.value;
-            plot1.src = `docs/images/mpc_${style}_1.png`;
-            plot2.src = `docs/images/mpc_${style}_2.png`;
+            plot1.src = `docs/images/mpc_${style}/mpc_${style}_1.png`;
+            plot2.src = `docs/images/mpc_${style}/mpc_${style}_2.png`;
+            updateMetricsTable(style);
         });
     </script>
 </body>
