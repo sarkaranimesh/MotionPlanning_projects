@@ -63,6 +63,105 @@
         <h3>About</h3>
         <p>This project demonstrates the use of Model Predictive Control for Adaptive Cruise Control, simulating different driver styles and analyzing performance metrics.</p>
         
+        <h2>MPC Formulation</h2>
+        <p>The Model Predictive Control (MPC) formulation for Adaptive Cruise Control optimizes the following cost function:</p>
+        
+        <div class="metrics">
+            <h3>Cost Function</h3>
+            <p><strong>J = Σ<sub>k=0</sub><sup>N-1</sup> [q<sub>v</sub>(v<sub>k</sub> - v<sub>ref</sub>)² + q<sub>d</sub>(d<sub>k</sub> - d<sub>ref</sub>)² + q<sub>close</sub>max(0, d<sub>safe</sub> - d<sub>k</sub>)² + q<sub>far</sub>max(0, d<sub>k</sub> - d<sub>max</sub>)² + r<sub>a</sub>a<sub>k</sub>² + r<sub>j</sub>j<sub>k</sub>²]</strong></p>
+            
+            <h4>Where:</h4>
+            <ul>
+                <li><strong>v<sub>k</sub></strong>: Current velocity at time step k</li>
+                <li><strong>v<sub>ref</sub></strong>: Reference/desired velocity (15 m/s)</li>
+                <li><strong>d<sub>k</sub></strong>: Current distance to lead vehicle</li>
+                <li><strong>d<sub>ref</sub></strong>: Desired following distance (time gap × velocity)</li>
+                <li><strong>a<sub>k</sub></strong>: Acceleration control input</li>
+                <li><strong>j<sub>k</sub></strong>: Jerk (rate of change of acceleration)</li>
+                <li><strong>q<sub>v</sub>, q<sub>d</sub>, q<sub>close</sub>, q<sub>far</sub></strong>: State weighting factors</li>
+                <li><strong>r<sub>a</sub>, r<sub>j</sub></strong>: Control input weighting factors</li>
+            </ul>
+        </div>
+
+        <h2>Driver Style Comparison</h2>
+        <p>Different driver styles are implemented by varying the MPC weights and time gap settings:</p>
+        
+        <div class="metrics">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Parameter</th>
+                        <th>Aggressive</th>
+                        <th>Balanced</th>
+                        <th>Conservative</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Time Gap</strong></td>
+                        <td>1.0s (Short)</td>
+                        <td>2.0s (Medium)</td>
+                        <td>3.0s (Long)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Speed Factor</strong></td>
+                        <td>1.2x (20% faster)</td>
+                        <td>1.0x (Default)</td>
+                        <td>1.0x (Default)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>q<sub>velocity</sub></strong></td>
+                        <td>2.0 (High priority)</td>
+                        <td>1.0 (Balanced)</td>
+                        <td>0.5 (Low priority)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>q<sub>distance</sub></strong></td>
+                        <td>1.0 (Low priority)</td>
+                        <td>2.0 (Balanced)</td>
+                        <td>3.0 (High priority)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>q<sub>close</sub></strong></td>
+                        <td>5.0 (Moderate penalty)</td>
+                        <td>10.0 (High penalty)</td>
+                        <td>20.0 (Very high penalty)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>q<sub>far</sub></strong></td>
+                        <td>0.5 (Low penalty)</td>
+                        <td>1.0 (Balanced)</td>
+                        <td>2.0 (High penalty)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>r<sub>acceleration</sub></strong></td>
+                        <td>0.05 (Allow aggressive)</td>
+                        <td>0.1 (Moderate)</td>
+                        <td>0.2 (Conservative)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>r<sub>jerk</sub></strong></td>
+                        <td>0.05 (Allow aggressive)</td>
+                        <td>0.1 (Moderate)</td>
+                        <td>0.2 (Conservative)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Behavior</strong></td>
+                        <td>Closer following, faster acceleration, higher speeds</td>
+                        <td>Moderate following distance, balanced performance</td>
+                        <td>Safe following distance, smooth driving, comfort-focused</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3>Key Differences:</h3>
+        <ul>
+            <li><strong>Aggressive:</strong> Prioritizes speed tracking over distance maintenance, allows more aggressive acceleration and jerk, maintains shorter time gaps</li>
+            <li><strong>Balanced:</strong> Equal weighting between speed and distance objectives, moderate penalties for safety violations</li>
+            <li><strong>Conservative:</strong> Prioritizes safety and comfort over speed, maintains longer time gaps, penalizes aggressive control inputs heavily</li>
+        </ul>
+        
         <div class="footer">
             &copy; 2024 <a href="https://github.com/sarkaranimesh/MotionPlanning_projects" target="_blank">GitHub Project</a>
         </div>

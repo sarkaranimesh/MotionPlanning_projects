@@ -190,7 +190,7 @@ def run_simulation(driver_style='balanced', sim_time=60.0, dt=0.1, save_path=Non
         lead_vel_history,
         acceleration_history,
         distance_history,
-        ego_vel_history[-1] * 3.6,  # Desired velocity
+        mpc.desired_velocity,  # Desired velocity
         settings['gap'] * ego_vel_history[-1],  # Desired distance
         gap_history,
         weights_history,

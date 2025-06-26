@@ -1,7 +1,7 @@
 {
     "aggressive": {
-        "velocity_rmse": 9.519367598761331,
-        "velocity_mae": 8.573409449159387,
+        "velocity_rmse": 12.871398836685298,
+        "velocity_mae": 12.16636192362042,
         "distance_rmse": 10.596195189273896,
         "distance_mae": 9.91545789902438,
         "accel_mean": 1.1720218604593382,
@@ -13,8 +13,8 @@
         "comfort_index": 3.3645769832431456
     },
     "balanced": {
-        "velocity_rmse": 9.656062549017786,
-        "velocity_mae": 8.845199515538543,
+        "velocity_rmse": 9.961700934495521,
+        "velocity_mae": 9.177775801163557,
         "distance_rmse": 11.332836079515426,
         "distance_mae": 9.355839832805067,
         "accel_mean": 1.0679887731718827,
@@ -26,8 +26,8 @@
         "comfort_index": 2.8047451724056898
     },
     "conservative": {
-        "velocity_rmse": 8.130730664076355,
-        "velocity_mae": 7.4200556565558,
+        "velocity_rmse": 9.776429201620978,
+        "velocity_mae": 9.18206981312454,
         "distance_rmse": 13.596315396836825,
         "distance_mae": 10.681316215913311,
         "accel_mean": 1.0683533836996044,
